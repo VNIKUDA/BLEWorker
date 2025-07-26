@@ -8,6 +8,9 @@
 #include "HIDTypes.h"
 #include "HIDKeyboardTypes.h"
 
+#include <rtc_clk_common.h>
+#include <rtc.h>
+
 #define MOUSE_NONE 0b00000
 #define MOUSE_LEFT 0b00001
 #define MOUSE_RIGHT 0b00010
@@ -16,50 +19,49 @@
 #define MOUSE_REPORT 0x01
 #define KEYBOARD_REPORT 0x02
 
-typedef struct {
+typedef struct
+{
     uint8_t modifiers;
     uint8_t reserved;
     uint8_t keys[6];
 } KeyReport;
 
 static const uint8_t _hidReportDescriptor[] = {
-    
-    
     // Input
-    USAGE_PAGE(1),      0x01,                     // USAGE_PAGE (Generic Desktop Ctrls)
-    USAGE(1),           0x06,                     // USAGE (Keyboard)
-    COLLECTION(1),      0x01,                     // COLLECTION (Application)
-    REPORT_ID(1),       0x01,                     //   REPORT_ID (2)
-    USAGE_PAGE(1),      0x07,                     //   USAGE_PAGE (Kbrd/Keypad)
-    USAGE_MINIMUM(1),   0xE0,                     //   USAGE_MINIMUM (0xE0)
-    USAGE_MAXIMUM(1),   0xE7,                     //   USAGE_MAXIMUM (0xE7)
-    LOGICAL_MINIMUM(1), 0x00,                     //   LOGICAL_MINIMUM (0)
-    LOGICAL_MAXIMUM(1), 0x01,                     //   Logical Maximum (1)
-    REPORT_SIZE(1),     0x01,                     //   REPORT_SIZE (1)
-    REPORT_COUNT(1),    0x08,                     //   REPORT_COUNT (8)
-    HIDINPUT(1),        0x02,                     //   INPUT (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position) ; Modifier byte
-    REPORT_COUNT(1),    0x01,                     //   REPORT_COUNT (1) ; 1 byte (Reserved)
-    REPORT_SIZE(1),     0x08,                     //   REPORT_SIZE (8)
-    HIDINPUT(1),        0x01,                     //   INPUT (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position) ; Reserved byte
-    REPORT_COUNT(1),    0x06,                     //   REPORT_COUNT (6) ; 6 bytes (Keys)
-    REPORT_SIZE(1),     0x08,                     //   REPORT_SIZE(8)
-    LOGICAL_MINIMUM(1), 0x00,                     //   LOGICAL_MINIMUM(0)
-    LOGICAL_MAXIMUM(1), 0x65,                     //   LOGICAL_MAXIMUM(0x65) ; 101 keys
-    USAGE_PAGE(1),      0x07,                     //   USAGE_PAGE (Kbrd/Keypad)
-    USAGE_MINIMUM(1),   0x00,                     //   USAGE_MINIMUM (0)
-    USAGE_MAXIMUM(1),   0x65,                     //   USAGE_MAXIMUM (0x65)
-    HIDINPUT(1),        0x00,                     //   INPUT (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position) ; Key arrays (6 bytes)
+    USAGE_PAGE(1), 0x01,      // USAGE_PAGE (Generic Desktop Ctrls)
+    USAGE(1), 0x06,           // USAGE (Keyboard)
+    COLLECTION(1), 0x01,      // COLLECTION (Application)
+    REPORT_ID(1), 0x01,       //   REPORT_ID (2)
+    USAGE_PAGE(1), 0x07,      //   USAGE_PAGE (Kbrd/Keypad)
+    USAGE_MINIMUM(1), 0xE0,   //   USAGE_MINIMUM (0xE0)
+    USAGE_MAXIMUM(1), 0xE7,   //   USAGE_MAXIMUM (0xE7)
+    LOGICAL_MINIMUM(1), 0x00, //   LOGICAL_MINIMUM (0)
+    LOGICAL_MAXIMUM(1), 0x01, //   Logical Maximum (1)
+    REPORT_SIZE(1), 0x01,     //   REPORT_SIZE (1)
+    REPORT_COUNT(1), 0x08,    //   REPORT_COUNT (8)
+    HIDINPUT(1), 0x02,        //   INPUT (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position) ; Modifier byte
+    REPORT_COUNT(1), 0x01,    //   REPORT_COUNT (1) ; 1 byte (Reserved)
+    REPORT_SIZE(1), 0x08,     //   REPORT_SIZE (8)
+    HIDINPUT(1), 0x01,        //   INPUT (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position) ; Reserved byte
+    REPORT_COUNT(1), 0x06,    //   REPORT_COUNT (6) ; 6 bytes (Keys)
+    REPORT_SIZE(1), 0x08,     //   REPORT_SIZE(8)
+    LOGICAL_MINIMUM(1), 0x00, //   LOGICAL_MINIMUM(0)
+    LOGICAL_MAXIMUM(1), 0x65, //   LOGICAL_MAXIMUM(0x65) ; 101 keys
+    USAGE_PAGE(1), 0x07,      //   USAGE_PAGE (Kbrd/Keypad)
+    USAGE_MINIMUM(1), 0x00,   //   USAGE_MINIMUM (0)
+    USAGE_MAXIMUM(1), 0x65,   //   USAGE_MAXIMUM (0x65)
+    HIDINPUT(1), 0x00,        //   INPUT (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position) ; Key arrays (6 bytes)
     // Output
-    REPORT_COUNT(1),    0x05,                     //   REPORT_COUNT (5) ; 5 bits (Num lock, Caps lock, Scroll lock, Compose, Kana)
-    REPORT_SIZE(1),     0x01,                     //   REPORT_SIZE (1)
-    USAGE_PAGE(1),      0x08,                     //   USAGE_PAGE (LEDs)
-    USAGE_MINIMUM(1),   0x01,                     //   USAGE_MINIMUM (0x01) ; Num Lock
-    USAGE_MAXIMUM(1),   0x05,                     //   USAGE_MAXIMUM (0x05) ; Kana
-    HIDOUTPUT(1),       0x02,                     //   OUTPUT (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    REPORT_COUNT(1),    0x01,                     //   REPORT_COUNT (1) ; 3 bits (Padding)
-    REPORT_SIZE(1),     0x03,                     //   REPORT_SIZE (3)
-    HIDOUTPUT(1),       0x01,                     //   OUTPUT (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    END_COLLECTION(0),   
+    REPORT_COUNT(1), 0x05,  //   REPORT_COUNT (5) ; 5 bits (Num lock, Caps lock, Scroll lock, Compose, Kana)
+    REPORT_SIZE(1), 0x01,   //   REPORT_SIZE (1)
+    USAGE_PAGE(1), 0x08,    //   USAGE_PAGE (LEDs)
+    USAGE_MINIMUM(1), 0x01, //   USAGE_MINIMUM (0x01) ; Num Lock
+    USAGE_MAXIMUM(1), 0x05, //   USAGE_MAXIMUM (0x05) ; Kana
+    HIDOUTPUT(1), 0x02,     //   OUTPUT (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    REPORT_COUNT(1), 0x01,  //   REPORT_COUNT (1) ; 3 bits (Padding)
+    REPORT_SIZE(1), 0x03,   //   REPORT_SIZE (3)
+    HIDOUTPUT(1), 0x01,     //   OUTPUT (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    END_COLLECTION(0),
 
     USAGE_PAGE(1), 0x01, // USAGE_PAGE (Generic Desktop) // for category of device
     USAGE(1), 0x02,      // USAGE (Mouse) // type of device
@@ -67,7 +69,7 @@ static const uint8_t _hidReportDescriptor[] = {
     USAGE(1), 0x01,      //     USAGE (Pointer)
     COLLECTION(1), 0x00, //     COLLECTION (Physical)
     REPORT_ID(1), 0x02,  //     REPORT_ID (1)
-    
+
     // ------------------------------------------------- Buttons (Left, Right, Middle, Back, Forward)
     USAGE_PAGE(1), 0x09,      //     USAGE_PAGE (Button)
     USAGE_MINIMUM(1), 0x01,   //     USAGE_MINIMUM (Button 1)
@@ -136,13 +138,18 @@ BLECharacteristic *keyboard;
 
 BleConnectionStatus *connectionStatus = new BleConnectionStatus();
 
-void taskServer(void)
+bool work;
+
+#define DEVICE_NAME "2.4G Receiver"
+
+void BLEInit()
 {
-    BLEDevice::init("Wireless Mouse");
+    esp_bt_controller_enable(ESP_BT_MODE_BLE);
+    BLEDevice::init(DEVICE_NAME);
     BLEServer *pServer = BLEDevice::createServer();
 
     BLESecurity *pSecurity = new BLESecurity();
-    pSecurity->setAuthenticationMode(ESP_LE_AUTH_REQ_BOND_MITM);
+    pSecurity->setAuthenticationMode(ESP_LE_AUTH_BOND);
 
     BLEHIDDevice hid(pServer);
 
@@ -159,15 +166,46 @@ void taskServer(void)
     hid.reportMap((uint8_t *)_hidReportDescriptor, sizeof(_hidReportDescriptor));
     hid.startServices();
 
-    hid.setBatteryLevel(99);
-
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    pAdvertising->setAppearance(HID_MOUSE);
+    pAdvertising->setAppearance(ESP_BLE_APPEARANCE_HID_KEYBOARD);
     pAdvertising->addServiceUUID(hid.hidService()->getUUID());
     // pAdvertising->setScanResponse(false);
     pAdvertising->start();
+}
 
-    vTaskDelay(portMAX_DELAY);
+void taskServer(void)
+{
+    BLEInit();
+    
+    while (true)
+    {
+        if (digitalRead(9) == LOW)
+        {
+            // Serial.println("Shit is working");
+            work = !work;
+            
+            if (work)
+            {
+                digitalWrite(8, LOW);
+                esp_bt_controller_enable(ESP_BT_MODE_BLE);
+                BLEInit();
+            }
+            else
+            {
+                digitalWrite(8, HIGH);
+                esp_bt_controller_disable();
+                BLEDevice::deinit();
+            };
+
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+
+        if (work)
+            vTaskDelay(pdMS_TO_TICKS(100));
+        else
+            esp_light_sleep_start();
+        // Serial.println("Parallel task");
+    }
 }
 
 void mouseSend(uint8_t buttons, int x, int y, int wheel, int hWheel)
@@ -195,7 +233,8 @@ void keyboardSend(uint8_t modifier, uint8_t key)
         report.modifiers = modifier;
         report.reserved = 0x00;
         report.keys[0] = key;
-        for (int i = 1; i < 6; i++) {
+        for (int i = 1; i < 6; i++)
+        {
             report.keys[i] = 0x00;
         }
         keyboard->setValue((uint8_t *)&report, sizeof(report));
@@ -207,11 +246,17 @@ void setup()
 {
     pinMode(8, OUTPUT);
     digitalWrite(8, LOW);
+    pinMode(9, INPUT);
+    randomSeed(analogRead(A0));
+
+    esp_bt_sleep_enable();
+    esp_sleep_enable_timer_wakeup(1 * 1000 * 1000);
 
     delay(1000);
     Serial.begin(115200);
     Serial.println("Starting BLE work!");
 
+    work = true;
     xTaskCreate((TaskFunction_t)taskServer, "server", 20000, NULL, 5, NULL);
 
     // BLEDevice::startAdvertising();
@@ -220,19 +265,36 @@ void setup()
 
 void loop()
 {
-    // put your main code here, to run repeatedly:
-    delay(200);
+    if (work)
+    {
+        int action = random(12);
 
-    mouseSend(MOUSE_NONE, 3, 3, 0, 0);
+        switch (action)
+        {
+        case 1:
+        case 2:
+        case 3:
+            keyboardSend(0x04, 0x2B);
+            delay(10);
+            keyboardSend(0x00, 0x00);
+            break;
+        case 4:
+            for (int i = 0; i < random(2, 6); i++)
+            {
+                keyboardSend(0x04, 0x2B);
+                delay(1);
+            }
+            delay(9);
+            keyboardSend(0x00, 0x00);
+            break;
+        }
 
-    if (digitalRead(9) == LOW) {
-        keyboardSend(0x08, 0x00);
-        delay(10);
-        keyboardSend(0x00, 0x00);
+        int xDirection = random(2) ? 1 : -1;
+        int yDirection = random(2) ? 1 : -1;
+        mouseSend(MOUSE_NONE, random(10, 30) * xDirection, random(10, 20) * yDirection, 0, 0);
     }
 
-    digitalWrite(8, LOW);
-
     Serial.println(temperatureRead());
-    digitalWrite(8, HIGH);
+
+    delay(60000);
 }
